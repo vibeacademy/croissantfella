@@ -1,89 +1,71 @@
 # Product Roadmap
 
-<!--
-TEMPLATE: This is a template roadmap. Run /bootstrap-product to generate
-a roadmap based on your PRD.
-
-Replace all [PLACEHOLDER] content with your actual product plans.
-Remove the EXAMPLE markers when you replace the content.
--->
-
 ## Overview
 
-[One paragraph describing the product direction and timeline.]
+A 2-3 month path to MVP launch, focused on delivering one outcome:
+getting a writer's work in front of readers with similar interests.
+Phase 1 ships the minimum surface needed to register, post, and get
+recommended; Phase 2 iterates based on real user feedback once a small
+community is active.
 
 ## Phase 1: MVP
 
-- **Target**: [Date or timeframe]
-- **Goal**: Deliver core value proposition to first users
+- **Target**: 2-3 months from start
+- **Goal**: Deliver the core value proposition — get writers' work seen by people with similar interests
+- **Launch Definition**: Public availability with the feature set below and active moderation in place
 
 ### Features
 
-| Feature | Priority | Status |
-|---------|----------|--------|
-| [Feature from PRD] | P0 | Backlog |
-| [Feature from PRD] | P0 | Backlog |
-| [Feature from PRD] | P1 | Backlog |
+| Feature                                  | Priority | Status  |
+| ---------------------------------------- | -------- | ------- |
+| User authentication                      | P0       | Backlog |
+| User profiles                            | P0       | Backlog |
+| Post creation                            | P0       | Backlog |
+| Taste questionnaire (account onboarding) | P0       | Backlog |
+| Personalized home feed (recommendations) | P0       | Backlog |
+| Moderation tooling                       | P0       | Backlog |
 
 ### Success Criteria
 
-- [ ] [Primary metric from PRD] reaches [target]
-- [ ] [Acceptance criterion]
+- [ ] 250 registered users within 3 months of launch
+- [ ] Active daily/monthly user tracking in place
+- [ ] Moderation queue keeps NSFW, hateful, and AI-generated content out of the public feed
+
+### Explicitly Out of Scope
+
+- Media uploads (images, attachments)
+- Real-time chat / direct messaging
+- Video content
 
 ## Phase 2: Iteration
 
-- **Target**: Post-MVP (1-2 months after launch)
-- **Goal**: Expand based on user feedback
+- **Target**: Post-MVP, driven by user feedback
+- **Goal**: Deepen engagement and improve discovery quality based on
+  what early users actually do, rather than what the team guessed they
+  would do
+- **Likely Themes** (to be confirmed with data):
+  - Recommendation quality improvements (signal from reads, replies, follows)
+  - Threaded discussion / commenting depth
+  - Notifications and follow graph
+  - Moderator tooling improvements based on real moderation load
 
-### Features
+## Constraints & Risks
 
-| Feature | Priority | Status |
-|---------|----------|--------|
-| [Based on user feedback] | TBD | Backlog |
+### Constraints
 
-### Success Criteria
+- **Timeline**: 2-3 months to launch
+- **Moderation**: Capacity (recruiting and supporting moderators) and the
+  technical challenge of detecting AI-generated, NSFW, and hateful
+  content reliably
+- **Tech stack fixed**: Google Cloud, Neon Postgres, FastAPI
 
-- [ ] [Retention or engagement metric]
+### Risks
 
-## Phase 3: Growth
-
-- **Target**: [3-6 months post-launch]
-- **Goal**: Scale and expand capabilities
-
-### Features
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| [Growth feature] | TBD | Backlog |
-
-## Milestone Definitions
-
-| Milestone | Criteria | Target Date |
-|-----------|----------|-------------|
-| M1: MVP Launch | Core features live, first users onboarded | [Date] |
-| M2: Product-Market Fit | [Retention/engagement threshold] | [Date] |
-| M3: Growth | [Scale/revenue threshold] | [Date] |
-
-## Constraints and Risks
-
-| Risk | Phase | Mitigation |
-|------|-------|------------|
-| [Risk from PRD] | 1 | [Mitigation strategy] |
-
-## Dependencies
-
-```text
-Phase 1: MVP
-    |
-    v
-Phase 2: Iteration (requires user feedback from Phase 1)
-    |
-    v
-Phase 3: Growth (requires product-market fit from Phase 2)
-```
-
-## Revision History
-
-| Date | Change | Author |
-|------|--------|--------|
-| [Date] | Initial roadmap creation | [Name] |
+- **Cold-start problem**: Recommendations need a critical mass of posts
+  and signal before they are useful — early users may see a sparse feed
+- **AI-generated content detection**: Current classifiers are
+  unreliable; moderation policy must combine automated signals with
+  human review
+- **Differentiator depends on community quality**: The "smaller, more
+  enjoyable atmosphere" is a function of moderation rigor, not
+  technology — investment must match the claim
