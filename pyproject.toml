@@ -1,7 +1,7 @@
 [project]
-name = "agile-flow-gcp"
+name = "croissantfella"
 version = "0.1.0"
-description = "Agile Flow GCP Edition — FastAPI + Jinja2 + HTMX starter for Cloud Run + Neon"
+description = "A forum for writers to share work-in-progress and find readers who care."
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
