@@ -130,10 +130,10 @@ jobs:
             --region="$GCP_REGION" \
             --format='value(status.url)')
 
-          echo "Smoke testing: $URL/api/health"
+          echo "Smoke testing: $URL/healthz"
 
           for ATTEMPT in $(seq 1 5); do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL/api/health" || echo "000")
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL/healthz" || echo "000")
             if [ "$HTTP_STATUS" = "200" ]; then
               echo "Rolled-back service is healthy."
               exit 0

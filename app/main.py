@@ -8,18 +8,21 @@ Production (Cloud Run) runs the same command — see Dockerfile.
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import health, todos
+from app.api import health
+from app.templates import templates
 
-app = FastAPI(title="Agile Flow GCP")
+app = FastAPI(title="Croissantfella")
 
-# Mount static files (CSS, images, favicon).
-# Pico.css is loaded via CDN in base.html so this directory is light.
 STATIC_DIR = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# Routes
 app.include_router(health.router)
-app.include_router(todos.router)
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "index.html")
