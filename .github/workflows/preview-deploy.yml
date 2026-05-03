@@ -36,28 +36,55 @@ jobs:
         # gates can read. `auth_method` selects between WIF (keyless,
         # recommended) and SA key (workshop shortcut). `neon_configured`
         # gates the per-PR Neon-branch creation step.
+        #
+        # The deploy requires BOTH GCP auth and Neon. If either is
+        # missing we set skip=true and surface an actionable message in
+        # the PR check summary, instead of attempting a deploy that's
+        # guaranteed to fail. Half-configured state (GCP set, Neon
+        # missing) was the cause of PR #35's first preview failure: the
+        # container booted with no DATABASE_URL, app/config.py refused
+        # SQLite in environment=preview, and Cloud Run reported an
+        # opaque "container failed to start" timeout 80 seconds later.
         run: |
+          # 1) Pick auth_method. "none" means we have no usable GCP creds.
           if [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "auth_method=none" >> "$GITHUB_OUTPUT"
-            echo "neon_configured=false" >> "$GITHUB_OUTPUT"
-            echo "GCP_PROJECT_ID not configured — skipping preview deploy."
+            AUTH_METHOD="none"
+            SKIP_REASON="GCP_PROJECT_ID not configured"
           elif [ -n "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ]; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "auth_method=wif" >> "$GITHUB_OUTPUT"
+            AUTH_METHOD="wif"
           elif [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "auth_method=sa-key" >> "$GITHUB_OUTPUT"
+            AUTH_METHOD="sa-key"
           else
+            AUTH_METHOD="none"
+            SKIP_REASON="GCP_PROJECT_ID set but no auth secret (need GCP_WORKLOAD_IDENTITY_PROVIDER or GCP_SA_KEY)"
+          fi
+
+          # 2) Determine Neon presence (independent of GCP).
+          if [ -n "${{ secrets.NEON_API_KEY }}" ]; then
+            NEON_CONFIGURED="true"
+          else
+            NEON_CONFIGURED="false"
+          fi
+
+          # 3) Decide whether to deploy. We require BOTH GCP auth and
+          # Neon — without DATABASE_URL the container fails its readiness
+          # probe because app/config.py refuses SQLite in non-dev
+          # environments. Skipping cleanly with an actionable warning is
+          # strictly better than a 1m20s opaque container-start timeout.
+          if [ "$AUTH_METHOD" = "none" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "auth_method=none" >> "$GITHUB_OUTPUT"
+            echo "neon_configured=$NEON_CONFIGURED" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Preview deploy skipped::${SKIP_REASON}"
+          elif [ "$NEON_CONFIGURED" = "false" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "auth_method=none" >> "$GITHUB_OUTPUT"
             echo "neon_configured=false" >> "$GITHUB_OUTPUT"
-            echo "No GCP auth configured — skipping preview deploy."
-          fi
-          if [ -n "${{ secrets.NEON_API_KEY }}" ]; then
-            echo "neon_configured=true" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Preview deploy skipped — Neon not configured::GCP secrets are set but NEON_API_KEY is missing. Without it the per-PR Neon branch step is skipped, no DATABASE_URL is passed to Cloud Run, and the container fails its readiness probe (app/config.py refuses SQLite in non-dev environments). Set the secret with: gh secret set NEON_API_KEY --repo \$GITHUB_REPOSITORY"
           else
-            echo "neon_configured=false" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "auth_method=$AUTH_METHOD" >> "$GITHUB_OUTPUT"
+            echo "neon_configured=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout code
