@@ -9,9 +9,11 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
+import app.models  # noqa: F401  -- register tables on SQLModel.metadata
 from app.db import get_session
 from app.main import app
 
@@ -24,6 +26,15 @@ def session_fixture() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def _enable_sqlite_fks(dbapi_conn, _record):  # type: ignore[no-untyped-def]
+        # SQLite ships with FK enforcement off; turn it on so ON DELETE
+        # CASCADE behaves the same way as in Postgres.
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
