@@ -20,6 +20,8 @@ from app.models.auth import MagicLinkToken
 from app.services.email import send_magic_link
 from app.templates import templates
 
+VERIFY_PATH = "/auth/verify"
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -52,7 +54,13 @@ async def login_submit(
     )
     session.commit()
 
-    verify_url = f"{settings.app_url.rstrip('/')}/auth/verify?token={raw_token}"
+    # Build the verify URL from the incoming request so previews, prod,
+    # and local dev all produce a link that points back to their own
+    # origin. ProxyHeadersMiddleware (registered in app.main) rewrites
+    # request.url.scheme from X-Forwarded-Proto; request.url.hostname
+    # comes from the Host header, which Cloud Run already sets to the
+    # external hostname before forwarding to the container.
+    verify_url = str(request.url.replace(path=VERIFY_PATH, query=f"token={raw_token}"))
     await send_magic_link(to=email, verify_url=verify_url)
 
     return templates.TemplateResponse(request, "auth/check_email.html")

@@ -86,6 +86,35 @@ def test_post_login_persists_hashed_token_with_15min_ttl(
     assert expected_min <= expires_at <= expected_max
 
 
+def test_post_login_verify_url_uses_forwarded_proto_and_host_header(
+    client: TestClient, session: Session
+) -> None:
+    """Magic-link URL points back to the preview's own origin.
+
+    Cloud Run terminates TLS at GFE, then forwards to the container with
+    Host set to the external hostname (pr-N---svc-hash.run.app for tagged
+    previews) and X-Forwarded-Proto=https. ProxyHeadersMiddleware rewrites
+    request.url.scheme from X-Forwarded-Proto; request.url.hostname comes
+    straight from the Host header, which is already the external value.
+    """
+    with respx.mock() as mock:
+        route = mock.post(RESEND_ENDPOINT).mock(return_value=RESEND_OK)
+        response = client.post(
+            "/auth/login",
+            data={"email": "alice@example.com"},
+            headers={
+                "Host": "pr-99---app-abc123-uc.a.run.app",
+                "X-Forwarded-Proto": "https",
+            },
+        )
+
+    assert response.status_code == 200
+    body = route.calls.last.request.content.decode("utf-8")
+    assert "https://pr-99---app-abc123-uc.a.run.app/auth/verify?token=" in body
+    assert "testserver" not in body  # the default TestClient host MUST NOT leak
+    assert "http://" not in body  # scheme MUST be the forwarded https
+
+
 def test_post_login_calls_resend_with_url_containing_raw_token(
     client: TestClient, session: Session
 ) -> None:
