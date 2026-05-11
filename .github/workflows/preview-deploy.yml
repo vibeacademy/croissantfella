@@ -205,6 +205,12 @@ jobs:
           if [ -n "${{ steps.neon.outputs.db_url_with_pooler }}" ]; then
             ENV_VARS="${ENV_VARS};DATABASE_URL=${{ steps.neon.outputs.db_url_with_pooler }}"
           fi
+          # RESEND_API_KEY is opt-in: if the secret is unset the preview
+          # boots without it and any code path that calls Resend will fail
+          # at request time rather than at container start.
+          if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then
+            ENV_VARS="${ENV_VARS};RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}"
+          fi
 
           # --service-account pins the runtime SA to the deployer SA so
           # the revision can read mounted Secret Manager secrets and any

@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     """App settings loaded from environment variables."""
 
     database_url: str = "sqlite:///./dev.db"
-    app_url: str = "http://localhost:8080"
     environment: str = "development"
     resend_api_key: str = ""
     resend_from_email: str = "noreply@croissantfella.dev"
