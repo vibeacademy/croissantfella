@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./dev.db"
     app_url: str = "http://localhost:8080"
     environment: str = "development"
+    resend_api_key: str = ""
+    resend_from_email: str = "noreply@croissantfella.dev"
+    magic_link_ttl_minutes: int = 15
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -42,3 +42,8 @@ asyncio_mode = "auto"
 python_version = "3.12"
 ignore_missing_imports = true
 check_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "respx>=0.23.1",
+]
