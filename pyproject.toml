@@ -12,6 +12,7 @@ dependencies = [
     "alembic>=1.13",
     "psycopg[binary,pool]>=3.2",
     "pydantic-settings>=2.6",
+    "httpx>=0.28",
 ]
 
 [project.optional-dependencies]
@@ -42,3 +43,8 @@ asyncio_mode = "auto"
 python_version = "3.12"
 ignore_missing_imports = true
 check_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "respx>=0.23.1",
+]
