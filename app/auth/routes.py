@@ -10,13 +10,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse
-from sqlmodel import Session
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from sqlmodel import Session, select
 
 from app.auth.tokens import generate_token, hash_token
 from app.config import get_settings
 from app.db import get_session
 from app.models.auth import MagicLinkToken
+from app.models.user import TasteProfile, User
 from app.services.email import send_magic_link
 from app.templates import templates
 
@@ -64,3 +65,58 @@ async def login_submit(
     await send_magic_link(to=email, verify_url=verify_url)
 
     return templates.TemplateResponse(request, "auth/check_email.html")
+
+
+def _expired_response(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "auth/expired.html", status_code=410)
+
+
+@router.get("/verify", name="verify_login")
+def verify(
+    request: Request,
+    session: SessionDep,
+    token: str = "",
+) -> Response:
+    """Consume the magic-link token, log the user in, and redirect.
+
+    Single-use: the row is deleted before the session cookie is set so a
+    replayed link returns 410 even if the first call's redirect was missed.
+    """
+    if not token:
+        return _expired_response(request)
+
+    row = session.exec(
+        select(MagicLinkToken).where(MagicLinkToken.token_hash == hash_token(token))
+    ).first()
+    if row is None:
+        return _expired_response(request)
+
+    expires_at = row.expires_at if row.expires_at.tzinfo else row.expires_at.replace(tzinfo=UTC)
+    if expires_at <= datetime.now(UTC):
+        # Expired tokens get deleted on the spot to keep the table small;
+        # the response shape is identical to "row not found" so a clock-
+        # skewed attacker can't distinguish the two cases.
+        session.delete(row)
+        session.commit()
+        return _expired_response(request)
+
+    email = row.email
+    session.delete(row)
+    session.commit()
+
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user is None:
+        # First sign-in for this email — mint a User row. display_name
+        # defaults to the email local-part; #16 / #17 will let the user
+        # change it. No unique constraint on display_name at the DB layer.
+        local_part = email.split("@", 1)[0][:100]
+        user = User(email=email, display_name=local_part)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+    request.session["user_id"] = str(user.id)
+
+    profile = session.get(TasteProfile, user.id)
+    target = "/" if profile is not None else "/onboard"
+    return RedirectResponse(target, status_code=302)

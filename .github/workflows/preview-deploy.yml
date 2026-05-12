@@ -211,6 +211,20 @@ jobs:
           if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then
             ENV_VARS="${ENV_VARS};RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}"
           fi
+          # SESSION_SECRET gates the magic-link verify flow. Production
+          # refuses to boot without a real value (app/config.py validator).
+          # For previews we always pass a non-empty, non-"dev-only" value
+          # so the container boots: use the configured secret if available,
+          # otherwise generate a per-deploy random one — preview envs are
+          # throwaway with no persistent users, so a fresh secret per
+          # deploy is acceptable and means cookies from a prior preview
+          # don't replay against a new revision.
+          if [ -n "${{ secrets.SESSION_SECRET }}" ]; then
+            SESSION_SECRET_VAL="${{ secrets.SESSION_SECRET }}"
+          else
+            SESSION_SECRET_VAL="preview-$(openssl rand -hex 32)"
+          fi
+          ENV_VARS="${ENV_VARS};SESSION_SECRET=${SESSION_SECRET_VAL}"
 
           # --service-account pins the runtime SA to the deployer SA so
           # the revision can read mounted Secret Manager secrets and any

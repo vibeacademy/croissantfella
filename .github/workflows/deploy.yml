@@ -161,6 +161,7 @@ jobs:
             ENVIRONMENT=production
             DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET }}
 
       - name: Route traffic to latest revision
         # success() gates on all prior steps succeeding — without it,

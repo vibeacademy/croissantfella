@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     resend_from_email: str = "noreply@croissantfella.dev"
     magic_link_ttl_minutes: int = 15
+    session_secret: str = "dev-only-do-not-use-in-prod"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -62,6 +63,13 @@ class Settings(BaseSettings):
                 "DATABASE_URL env var didn't override the dev default — for "
                 "previews, NEON_API_KEY may be unconfigured so the Neon branch "
                 "step was skipped."
+            )
+        if not self.session_secret or self.session_secret.startswith("dev-only"):
+            raise ValueError(
+                f"SESSION_SECRET is missing or insecure in {self.environment}. "
+                "Set the secret with `gh secret set SESSION_SECRET` and ensure "
+                "it's wired into the deploy.yml / preview-deploy.yml env block. "
+                "Session cookies signed with the dev default would be forgeable."
             )
         return self
 

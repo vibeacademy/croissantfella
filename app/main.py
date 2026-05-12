@@ -11,11 +11,15 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.api import health
 from app.auth import routes as auth_routes
+from app.config import get_settings
 from app.templates import templates
+
+_settings = get_settings()
 
 app = FastAPI(title="Croissantfella")
 # Cloud Run terminates TLS at the proxy and forwards via X-Forwarded-Proto
@@ -24,6 +28,16 @@ app = FastAPI(title="Croissantfella")
 # constructed from it (magic links, OAuth redirects) silently break in
 # preview and production. See docs/PATTERN-LIBRARY.md pitfall #3.
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+# Signed session cookie used by the magic-link verify flow. https_only=True
+# adds the `Secure` attribute so the cookie only travels over TLS;
+# same_site="lax" defends against CSRF on top-level GET while still letting
+# the verify link redirect from the user's email client.
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_settings.session_secret,
+    https_only=True,
+    same_site="lax",
+)
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
