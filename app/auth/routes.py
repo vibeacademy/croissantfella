@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session, select
 
+from app.auth.rate_limit import check_magic_link_rate_limit
 from app.auth.tokens import generate_token, hash_token
 from app.config import get_settings
 from app.db import get_session
@@ -42,6 +43,14 @@ async def login_submit(
 ) -> HTMLResponse:
     """Mint a token, store its hash, send the magic link, return the
     same "check your email" page for every input."""
+    # Rate limit BEFORE any DB write or outbound HTTP call. Suppressed
+    # requests still return the same template so the response shape is
+    # identical to a successful send — an attacker can't probe whether
+    # they're being throttled.
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_magic_link_rate_limit(email=email, client_ip=client_ip):
+        return templates.TemplateResponse(request, "auth/check_email.html")
+
     settings = get_settings()
     raw_token = generate_token()
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.magic_link_ttl_minutes)
