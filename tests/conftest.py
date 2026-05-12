@@ -14,8 +14,19 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 import app.models  # noqa: F401  -- register tables on SQLModel.metadata
+from app.auth.rate_limit import email_limiter, ip_limiter
 from app.db import get_session
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters() -> Generator[None, None, None]:
+    """Module-level limiter state would otherwise leak between tests."""
+    email_limiter._reset()
+    ip_limiter._reset()
+    yield
+    email_limiter._reset()
+    ip_limiter._reset()
 
 
 @pytest.fixture(name="session")
