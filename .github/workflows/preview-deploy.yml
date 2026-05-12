@@ -211,6 +211,13 @@ jobs:
           if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then
             ENV_VARS="${ENV_VARS};RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}"
           fi
+          # SESSION_SECRET gates the magic-link verify flow. If unset, the
+          # container refuses to boot in non-dev envs (app/config.py),
+          # which is the intended fail-loud behavior — magic links signed
+          # with the dev default would be forgeable.
+          if [ -n "${{ secrets.SESSION_SECRET }}" ]; then
+            ENV_VARS="${ENV_VARS};SESSION_SECRET=${{ secrets.SESSION_SECRET }}"
+          fi
 
           # --service-account pins the runtime SA to the deployer SA so
           # the revision can read mounted Secret Manager secrets and any

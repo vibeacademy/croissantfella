@@ -94,6 +94,7 @@ def test_production_postgres_url_passes(monkeypatch: pytest.MonkeyPatch) -> None
     # non-empty URL and returns clean.
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h.neon.tech/db")
+    monkeypatch.setenv("SESSION_SECRET", "production-secret-not-real")
     from app.config import Settings
 
     settings = Settings()
@@ -120,6 +121,7 @@ def test_preview_postgres_url_passes(monkeypatch: pytest.MonkeyPatch) -> None:
     # happy path while widening the gate.
     monkeypatch.setenv("ENVIRONMENT", "preview")
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h.neon.tech/preview-pr-1")
+    monkeypatch.setenv("SESSION_SECRET", "preview-secret-not-real")
     from app.config import Settings
 
     settings = Settings()
@@ -149,3 +151,18 @@ def test_test_environment_allows_sqlite(monkeypatch: pytest.MonkeyPatch) -> None
 
     settings = Settings()
     assert settings.database_url == "sqlite://"
+
+
+def test_session_secret_dev_default_rejected_outside_dev(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The dev-default session secret would let an attacker forge session
+    # cookies in production. The validator must catch the unset-or-default
+    # case at startup, with the same loudness as the DATABASE_URL gate.
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h.neon.tech/db")
+    monkeypatch.delenv("SESSION_SECRET", raising=False)
+    from app.config import Settings
+
+    with pytest.raises(ValueError, match="SESSION_SECRET is missing or insecure"):
+        Settings()
