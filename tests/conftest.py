@@ -59,6 +59,11 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
         yield session
 
     app.dependency_overrides[get_session] = get_session_override
-    with TestClient(app) as client:
+    # base_url=https so SessionMiddleware's Secure cookie survives the
+    # httpx cookie jar — without this, the cookie is set on the response
+    # but stripped on the next request because Secure cookies don't ride
+    # http://. Tests can still send X-Forwarded-Proto explicitly to
+    # exercise ProxyHeadersMiddleware overrides.
+    with TestClient(app, base_url="https://testserver") as client:
         yield client
     app.dependency_overrides.clear()
