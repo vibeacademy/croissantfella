@@ -12,6 +12,13 @@
   </head>
   <body>
     <main class="container">
+      {% if request.session.get("user_id") %}
+        <nav style="display:flex;justify-content:flex-end;">
+          <form action="/auth/logout" method="post" style="margin:0;">
+            <button type="submit" class="secondary">Log out</button>
+          </form>
+        </nav>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
   </body>

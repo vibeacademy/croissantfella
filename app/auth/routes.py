@@ -129,3 +129,16 @@ def verify(
     profile = session.get(TasteProfile, user.id)
     target = "/" if profile is not None else "/onboard"
     return RedirectResponse(target, status_code=302)
+
+
+@router.post("/logout")
+def logout(request: Request) -> RedirectResponse:
+    """Clear the session cookie and redirect to the home page.
+
+    POST-only — a GET-triggered logout could be CSRF'd by any link that
+    a third-party site renders. The session is cleared unconditionally;
+    an anonymous request still gets a clean 302 home (the no-op is
+    deliberately quiet).
+    """
+    request.session.clear()
+    return RedirectResponse("/", status_code=302)
