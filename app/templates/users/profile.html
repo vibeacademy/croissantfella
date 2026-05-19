@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.display_name }} · Croissantfella{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>{{ profile_user.display_name }}</h1>
+  {% if profile_user.bio %}
+    <p>{{ profile_user.bio }}</p>
+  {% endif %}
+</hgroup>
+
+{% if posts %}
+  <section>
+    <h2>Posts</h2>
+    <ul>
+      {% for post in posts %}
+        <li>
+          <article>
+            <header>
+              <h3><a href="/posts/{{ post.id }}">{{ post.title }}</a></h3>
+              {% if post.published_at %}
+                <small>{{ post.published_at.strftime("%Y-%m-%d") }}</small>
+              {% endif %}
+            </header>
+            <p>{{ post.body[:200] }}{% if post.body|length > 200 %}…{% endif %}</p>
+          </article>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% else %}
+  <p>No posts yet.</p>
+{% endif %}
+{% endblock %}
