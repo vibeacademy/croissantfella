@@ -17,6 +17,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.api import health
 from app.auth import routes as auth_routes
 from app.config import get_settings
+from app.onboard import routes as onboard_routes
 from app.templates import templates
 
 _settings = get_settings()
@@ -44,6 +45,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 app.include_router(health.router)
 app.include_router(auth_routes.router)
+app.include_router(onboard_routes.router)
 
 
 @app.get("/", response_class=HTMLResponse)

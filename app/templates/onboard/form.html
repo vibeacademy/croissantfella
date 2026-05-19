@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Tell us what you read · Croissantfella{% endblock %}
+{% block content %}
+<h1>Tell us what you read</h1>
+<p>Pick the kinds of writing you'd like to see. You can change these later.</p>
+<form method="post">
+  <fieldset>
+    <legend>Genres <small>(at least one)</small></legend>
+    {% for g in genres %}
+      <label>
+        <input type="checkbox" name="genres" value="{{ g.value }}" />
+        {{ g.value.replace("_", " ") }}
+      </label>
+    {% endfor %}
+  </fieldset>
+  <fieldset>
+    <legend>Tones <small>(optional)</small></legend>
+    {% for t in tones %}
+      <label>
+        <input type="checkbox" name="tones" value="{{ t.value }}" />
+        {{ t.value.replace("_", " ") }}
+      </label>
+    {% endfor %}
+  </fieldset>
+  <fieldset>
+    <legend>Form lengths <small>(optional)</small></legend>
+    {% for fl in form_lengths %}
+      <label>
+        <input type="checkbox" name="form_lengths" value="{{ fl.value }}" />
+        {{ fl.value.replace("_", " ") }}
+      </label>
+    {% endfor %}
+  </fieldset>
+  <button type="submit">Save and continue</button>
+</form>
+{% endblock %}
