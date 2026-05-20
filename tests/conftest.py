@@ -59,6 +59,12 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
         yield session
 
     app.dependency_overrides[get_session] = get_session_override
+    # RequireTasteProfileMiddleware reads app.state.engine to query
+    # TasteProfile outside FastAPI's DI. Point it at the test engine so
+    # the middleware exercises real DB lookups against test data
+    # rather than the dev-default sqlite or production Neon.
+    original_engine = getattr(app.state, "engine", None)
+    app.state.engine = session.bind
     # base_url=https so SessionMiddleware's Secure cookie survives the
     # httpx cookie jar — without this, the cookie is set on the response
     # but stripped on the next request because Secure cookies don't ride
@@ -67,3 +73,5 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
     with TestClient(app, base_url="https://testserver") as client:
         yield client
     app.dependency_overrides.clear()
+    if original_engine is not None:
+        app.state.engine = original_engine
